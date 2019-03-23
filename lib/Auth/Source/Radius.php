@@ -49,14 +49,14 @@ class Radius extends \SimpleSAML\Module\core\Auth\UserPassBase
     private $realm;
 
     /**
-     * @var string The attribute name where the username should be stored.
+     * @var string|null The attribute name where the username should be stored.
      */
-    private $usernameAttribute;
+    private $usernameAttribute = null;
 
     /**
-     * @var string The vendor for the RADIUS attributes we are interrested in.
+     * @var string|null The vendor for the RADIUS attributes we are interrested in.
      */
-    private $vendor;
+    private $vendor = null;
 
     /**
      * @var string The vendor-specific attribute for the RADIUS attributes we are
@@ -65,9 +65,9 @@ class Radius extends \SimpleSAML\Module\core\Auth\UserPassBase
     private $vendorType;
 
     /**
-     * @var string The NAS-Identifier that should be set in Access-Request packets.
+     * @var string|null The NAS-Identifier that should be set in Access-Request packets.
      */
-    private $nasIdentifier;
+    private $nasIdentifier = null;
 
 
     /**
@@ -85,35 +85,35 @@ class Radius extends \SimpleSAML\Module\core\Auth\UserPassBase
         parent::__construct($info, $config);
 
         // Parse configuration.
-        $config = \SimpleSAML\Configuration::loadFromArray(
+        $cfg = \SimpleSAML\Configuration::loadFromArray(
             $config,
             'Authentication source '.var_export($this->authId, true)
         );
 
-        $this->servers = $config->getArray('servers', []);
+        $this->servers = $cfg->getArray('servers', []);
         // For backwards compatibility
         if (empty($this->servers)) {
-            $this->hostname = $config->getString('hostname');
-            $this->port = $config->getIntegerRange('port', 1, 65535, 1812);
-            $this->secret = $config->getString('secret');
+            $this->hostname = $cfg->getString('hostname');
+            $this->port = $cfg->getIntegerRange('port', 1, 65535, 1812);
+            $this->secret = $cfg->getString('secret');
             $this->servers[] = [
                 'hostname' => $this->hostname,
                 'port' => $this->port,
                 'secret' => $this->secret
             ];
         }
-        $this->timeout = $config->getInteger('timeout', 5);
-        $this->retries = $config->getInteger('retries', 3);
-        $this->realm = $config->getString('realm', null);
-        $this->usernameAttribute = $config->getString('username_attribute', null);
-        $this->nasIdentifier = $config->getString(
+        $this->timeout = $cfg->getInteger('timeout', 5);
+        $this->retries = $cfg->getInteger('retries', 3);
+        $this->realm = $cfg->getString('realm', null);
+        $this->usernameAttribute = $cfg->getString('username_attribute', null);
+        $this->nasIdentifier = $cfg->getString(
             'nas_identifier',
             \SimpleSAML\Utils\HTTP::getSelfHost()
         );
 
-        $this->vendor = $config->getInteger('attribute_vendor', null);
+        $this->vendor = $cfg->getInteger('attribute_vendor', null);
         if ($this->vendor !== null) {
-            $this->vendorType = $config->getInteger('attribute_vendor_type');
+            $this->vendorType = $cfg->getInteger('attribute_vendor_type');
         }
     }
 
@@ -123,7 +123,7 @@ class Radius extends \SimpleSAML\Module\core\Auth\UserPassBase
      *
      * @param string $username  The username the user wrote.
      * @param string $password  The password the user wrote.
-     * @return array  Associative array with the user's attributes.
+     * @return array Associative array with the user's attributes.
      */
     protected function login($username, $password)
     {
@@ -131,6 +131,9 @@ class Radius extends \SimpleSAML\Module\core\Auth\UserPassBase
         Assert::string($password);
 
         $radius = radius_auth_open();
+        if (!is_resource($radius)) {
+            throw new \Exception("Insufficient memory available to create handle.");
+        }
 
         // Try to add all radius servers, trigger a failure if no one works
         $success = false;
@@ -192,9 +195,10 @@ class Radius extends \SimpleSAML\Module\core\Auth\UserPassBase
         // If we get this far, we have a valid login
 
         $attributes = [];
+        $usernameAttribute = $this->usernameAttribute;
 
-        if ($this->usernameAttribute !== null) {
-            $attributes[$this->usernameAttribute] = [$username];
+        if ($usernameAttribute !== null) {
+            $attributes[$usernameAttribute] = [$username];
         }
 
         if ($this->vendor === null) {
@@ -215,7 +219,7 @@ class Radius extends \SimpleSAML\Module\core\Auth\UserPassBase
 
             // Use the received user name
             if ($resa['attr'] == \RADIUS_USER_NAME) {
-                $attributes[$this->usernameAttribute] = [$resa['data']];
+                $attributes[$usernameAttribute] = [$resa['data']];
                 continue;
             }
 
@@ -224,7 +228,7 @@ class Radius extends \SimpleSAML\Module\core\Auth\UserPassBase
             }
 
             $resv = radius_get_vendor_attr($resa['data']);
-            if (!is_array($resv)) {
+            if ($resv === false) {
                 throw new \Exception(
                     'Error getting vendor specific attribute: '.radius_strerror($radius)
                 );
