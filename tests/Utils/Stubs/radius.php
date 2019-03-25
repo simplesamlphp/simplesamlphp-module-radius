@@ -405,3 +405,37 @@ function radius_create_request($radius_handle, $type)
 function radius_get_vendor_attr($data)
 {
 }
+
+/**
+ * Attaches a binary attribute
+ * @param resource $radius_handle
+ * @param int $type
+ * @param string $value
+ * @param int $options
+ * @param int $tag
+ * @return bool
+ * @since 1.1.0
+ */
+function radius_put_attr(resource $radius_handle, $type, $value, $options = 0, $tag = null)
+{
+}
+
+/**
+ * Extracts an attribute
+ * @param resource $radius_handle
+ * @return mixed
+ * @since 1.1.0
+ */
+function radius_get_attr($radius_handle)
+{
+}
+
+/**
+ * Returns an error message
+ * @param resource $radius_handle
+ * @return string
+ * @since 1.1.0
+ */
+function radius_strerror(resource $radius_handle)
+{
+}

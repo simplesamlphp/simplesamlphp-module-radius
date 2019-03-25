@@ -123,7 +123,7 @@ class Radius extends \SimpleSAML\Module\core\Auth\UserPassBase
      *
      * @param string $username  The username the user wrote.
      * @param string $password  The password the user wrote.
-     * @return array Associative array with the user's attributes.
+     * @return array[] Associative array with the user's attributes.
      */
     protected function login($username, $password)
     {
@@ -218,7 +218,7 @@ class Radius extends \SimpleSAML\Module\core\Auth\UserPassBase
             }
 
             // Use the received user name
-            if ($resa['attr'] == \RADIUS_USER_NAME) {
+            if ($resa['attr'] === \RADIUS_USER_NAME && $usernameAttribute !== null) {
                 $attributes[$usernameAttribute] = [$resa['data']];
                 continue;
             }
