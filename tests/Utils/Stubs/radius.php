@@ -395,3 +395,13 @@ function radius_config($radius_handle, $file)
 function radius_create_request($radius_handle, $type)
 {
 }
+
+/**
+ * Extracts a vendor specific attribute
+ * @param string $data
+ * @return array|false
+ * @since 1.1.0
+ */
+function radius_get_vendor_attr($data)
+{
+}
