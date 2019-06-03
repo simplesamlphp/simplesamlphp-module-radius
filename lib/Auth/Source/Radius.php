@@ -2,8 +2,6 @@
 
 namespace SimpleSAML\Module\radius\Auth\Source;
 
-use Webmozart\Assert\Assert;
-
 /**
  * RADIUS authentication source.
  *
@@ -78,8 +76,8 @@ class Radius extends \SimpleSAML\Module\core\Auth\UserPassBase
      */
     public function __construct($info, $config)
     {
-        Assert::isArray($info);
-        Assert::isArray($config);
+        assert(is_array($info));
+        assert(is_array($config));
 
         // Call the parent constructor first, as required by the interface
         parent::__construct($info, $config);
@@ -127,8 +125,8 @@ class Radius extends \SimpleSAML\Module\core\Auth\UserPassBase
      */
     protected function login($username, $password)
     {
-        Assert::string($username);
-        Assert::string($password);
+        assert(is_string($username));
+        assert(is_string($password));
 
         $radius = radius_auth_open();
         if (!is_resource($radius)) {
