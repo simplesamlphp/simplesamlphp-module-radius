@@ -29,6 +29,6 @@
     </issueHandlers>
 
     <stubs>
-        <file name="tests/Utils/Stubs/radius.php" />
+        <file name="vendor/simplesamlphp/simplesamlphp-test-framework/stubs/radius.php" />
     </stubs>
 </psalm>
