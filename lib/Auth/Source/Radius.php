@@ -85,7 +85,7 @@ class Radius extends \SimpleSAML\Module\core\Auth\UserPassBase
         // Parse configuration.
         $cfg = \SimpleSAML\Configuration::loadFromArray(
             $config,
-            'Authentication source '.var_export($this->authId, true)
+            'Authentication source ' . var_export($this->authId, true)
         );
 
         $this->servers = $cfg->getArray('servers', []);
@@ -139,16 +139,18 @@ class Radius extends \SimpleSAML\Module\core\Auth\UserPassBase
             if (!isset($server['port'])) {
                 $server['port'] = 1812;
             }
-            if (!radius_add_server(
-                $radius,
-                $server['hostname'],
-                $server['port'],
-                $server['secret'],
-                $this->timeout,
-                $this->retries
-            )) {
+            if (
+                !radius_add_server(
+                    $radius,
+                    $server['hostname'],
+                    $server['port'],
+                    $server['secret'],
+                    $this->timeout,
+                    $this->retries
+                )
+            ) {
                 \SimpleSAML\Logger::info(
-                    "Could not add radius server: ".radius_strerror($radius)
+                    "Could not add radius server: " . radius_strerror($radius)
                 );
                 continue;
             }
@@ -160,14 +162,14 @@ class Radius extends \SimpleSAML\Module\core\Auth\UserPassBase
 
         if (!radius_create_request($radius, \RADIUS_ACCESS_REQUEST)) {
             throw new \Exception(
-                'Error creating radius request: '.radius_strerror($radius)
+                'Error creating radius request: ' . radius_strerror($radius)
             );
         }
 
         if ($this->realm === null) {
             radius_put_attr($radius, \RADIUS_USER_NAME, $username);
         } else {
-            radius_put_attr($radius, \RADIUS_USER_NAME, $username.'@'.$this->realm);
+            radius_put_attr($radius, \RADIUS_USER_NAME, $username . '@' . $this->realm);
         }
         radius_put_attr($radius, \RADIUS_USER_PASSWORD, $password);
 
@@ -185,7 +187,7 @@ class Radius extends \SimpleSAML\Module\core\Auth\UserPassBase
                     throw new \Exception('Radius authentication error: Challenge requested, but not supported.');
                 default:
                     throw new \Exception(
-                        'Error during radius authentication: '.radius_strerror($radius)
+                        'Error during radius authentication: ' . radius_strerror($radius)
                     );
             }
         }
@@ -211,7 +213,7 @@ class Radius extends \SimpleSAML\Module\core\Auth\UserPassBase
         while ($resa = radius_get_attr($radius)) {
             if (!is_array($resa)) {
                 throw new \Exception(
-                    'Error getting radius attributes: '.radius_strerror($radius)
+                    'Error getting radius attributes: ' . radius_strerror($radius)
                 );
             }
 
@@ -228,7 +230,7 @@ class Radius extends \SimpleSAML\Module\core\Auth\UserPassBase
             $resv = radius_get_vendor_attr($resa['data']);
             if ($resv === false) {
                 throw new \Exception(
-                    'Error getting vendor specific attribute: '.radius_strerror($radius)
+                    'Error getting vendor specific attribute: ' . radius_strerror($radius)
                 );
             }
 
