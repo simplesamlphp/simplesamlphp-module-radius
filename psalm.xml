@@ -6,6 +6,7 @@
 >
     <projectFiles>
         <directory name="lib" />
+        <directory name="tests" />
     </projectFiles>
 
     <issueHandlers>
@@ -26,6 +27,13 @@
         <MissingParamType errorLevel="info" />
         <UnusedClass errorLevel="info" />
         <PossiblyUnusedMethod errorLevel="info" />
+
+        <!-- Ignore UndefinedConstant until we can use Psalm >=3.2.3 -->
+        <UndefinedConstant>
+            <errorLevel type="suppress">
+                <file name="lib/Auth/Source/Radius.php" />
+            </errorLevel>
+        </UndefinedConstant>
     </issueHandlers>
 
     <stubs>
