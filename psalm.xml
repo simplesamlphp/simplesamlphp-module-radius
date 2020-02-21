@@ -28,12 +28,13 @@
         <UnusedClass errorLevel="info" />
         <PossiblyUnusedMethod errorLevel="info" />
 
-        <!-- Ignore UndefinedConstant until we can use Psalm >=3.2.3 -->
-        <UndefinedConstant>
+        <!-- Ignore UnresolvableInclude on CLI-scripts -->
+        <UnresolvableInclude>
             <errorLevel type="suppress">
-                <file name="lib/Auth/Source/Radius.php" />
+                <file name="tests/bootstrap.php" />
             </errorLevel>
-        </UndefinedConstant>
+        </UnresolvableInclude>
+	
     </issueHandlers>
 
     <stubs>
