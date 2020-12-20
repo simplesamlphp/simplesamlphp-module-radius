@@ -239,6 +239,7 @@ class Radius extends \SimpleSAML\Module\core\Auth\UserPassBase
             }
 
             $attrib_name = strtok($datav, '=');
+            /** @psalm-suppress TooFewArguments */
             $attrib_value = strtok('=');
 
             // if the attribute name is already in result set, add another value
