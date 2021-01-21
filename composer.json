@@ -27,14 +27,14 @@
         }
     },
     "require": {
-        "php": ">=7.4",
+        "php": ">=7.4 || ^8.0",
         "ext-radius": "*",
 
         "simplesamlphp/composer-module-installer": "~1.1",
         "simplesamlphp/simplesamlphp": "dev-master"
     },
     "require-dev": {
-        "simplesamlphp/simplesamlphp-test-framework": "^1.0.3"
+        "simplesamlphp/simplesamlphp-test-framework": "^1.0.5"
     },
     "support": {
         "issues": "https://github.com/tvdijen/simplesamlphp-module-radius/issues",
