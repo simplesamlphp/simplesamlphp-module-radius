@@ -2,7 +2,7 @@
 
 namespace SimpleSAML\Module\radius\Auth\Source;
 
-use Webmozart\Assert\Assert;
+use SimpleSAML\Assert\Assert;
 
 /**
  * RADIUS authentication source.
