@@ -1,8 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SimpleSAML\Module\radius\Auth\Source;
 
+use Exception;
 use SimpleSAML\Assert\Assert;
+use SimpleSAML\Configuration;
+use SimpleSAML\Module\core\Auth\UserPassBase;
+use SimpleSAML\Utils;
 
 /**
  * RADIUS authentication source.
@@ -11,63 +17,63 @@ use SimpleSAML\Assert\Assert;
  *
  * @package SimpleSAMLphp
  */
-class Radius extends \SimpleSAML\Module\core\Auth\UserPassBase
+class Radius extends UserPassBase
 {
     /**
      * @var array The list of radius servers to use.
      */
-    private $servers;
+    private array $servers;
 
     /**
      * @var string The hostname of the radius server.
      */
-    private $hostname;
+    private string $hostname;
 
     /**
      * @var int The port of the radius server.
      */
-    private $port;
+    private int $port;
 
     /**
      * @var string The secret used when communicating with the radius server.
      */
-    private $secret;
+    private string $secret;
 
     /**
      * @var int The timeout for contacting the radius server.
      */
-    private $timeout;
+    private int $timeout;
 
     /**
      * @var int The number of retries which should be attempted.
      */
-    private $retries;
+    private int $retries;
 
     /**
-     * Var string The realm to be added to the entered username.
+     * @var string|null The realm to be added to the entered username.
      */
-    private $realm;
+    private ?string $realm;
 
     /**
      * @var string|null The attribute name where the username should be stored.
      */
-    private $usernameAttribute = null;
+    private ?string $usernameAttribute = null;
 
     /**
      * @var string|null The vendor for the RADIUS attributes we are interrested in.
      */
-    private $vendor = null;
+    private ?string $vendor = null;
 
     /**
      * @var string The vendor-specific attribute for the RADIUS attributes we are
      *     interrested in.
      */
-    private $vendorType;
+    private string $vendorType;
 
     /**
      * @var string|null The NAS-Identifier that should be set in Access-Request packets.
      */
-    private $nasIdentifier = null;
+    private ?string $nasIdentifier = null;
 
 
     /**
@@ -82,7 +88,7 @@ class Radius extends \SimpleSAML\Module\core\Auth\UserPassBase
         parent::__construct($info, $config);
 
         // Parse configuration.
-        $cfg = \SimpleSAML\Configuration::loadFromArray(
+        $cfg = Configuration::loadFromArray(
             $config,
             'Authentication source ' . var_export($this->authId, true)
         );
@@ -105,7 +111,7 @@ class Radius extends \SimpleSAML\Module\core\Auth\UserPassBase
         $this->usernameAttribute = $cfg->getString('username_attribute', null);
         $this->nasIdentifier = $cfg->getString(
             'nas_identifier',
-            \SimpleSAML\Utils\HTTP::getSelfHost()
+            Utils\HTTP::getSelfHost()
         );
 
         $this->vendor = $cfg->getInteger('attribute_vendor', null);
@@ -126,7 +132,7 @@ class Radius extends \SimpleSAML\Module\core\Auth\UserPassBase
     {
         $radius = radius_auth_open();
         if (!is_resource($radius)) {
-            throw new \Exception("Insufficient memory available to create handle.");
+            throw new Exception("Insufficient memory available to create handle.");
         }
 
         // Try to add all radius servers, trigger a failure if no one works
@@ -153,11 +159,11 @@ class Radius extends \SimpleSAML\Module\core\Auth\UserPassBase
             $success = true;
         }
         if (!$success) {
-            throw new \Exception('Error adding radius servers, no servers available');
+            throw new Exception('Error adding radius servers, no servers available');
         }
 
         if (!radius_create_request($radius, \RADIUS_ACCESS_REQUEST)) {
-            throw new \Exception(
+            throw new Exception(
                 'Error creating radius request: ' . radius_strerror($radius)
             );
         }
@@ -174,15 +180,15 @@ class Radius extends \SimpleSAML\Module\core\Auth\UserPassBase
         }
 
         $res = radius_send_request($radius);
-        if ($res != \RADIUS_ACCESS_ACCEPT) {
+        if ($res !== \RADIUS_ACCESS_ACCEPT) {
             switch ($res) {
                 case \RADIUS_ACCESS_REJECT:
                     // Invalid username or password
                     throw new \SimpleSAML\Error\Error('WRONGUSERPASS');
                 case \RADIUS_ACCESS_CHALLENGE:
-                    throw new \Exception('Radius authentication error: Challenge requested, but not supported.');
+                    throw new Exception('Radius authentication error: Challenge requested, but not supported.');
                 default:
-                    throw new \Exception(
+                    throw new Exception(
                         'Error during radius authentication: ' . radius_strerror($radius)
                     );
             }
@@ -208,7 +214,7 @@ class Radius extends \SimpleSAML\Module\core\Auth\UserPassBase
         // get AAI attribute sets. Contributed by Stefan Winter, (c) RESTENA
         while ($resa = radius_get_attr($radius)) {
             if (!is_array($resa)) {
-                throw new \Exception(
+                throw new Exception(
                     'Error getting radius attributes: ' . radius_strerror($radius)
                 );
             }
@@ -225,7 +231,7 @@ class Radius extends \SimpleSAML\Module\core\Auth\UserPassBase
 
             $resv = radius_get_vendor_attr($resa['data']);
             if ($resv === false) {
-                throw new \Exception(
+                throw new Exception(
                     'Error getting vendor specific attribute: ' . radius_strerror($radius)
                 );
             }
@@ -234,7 +240,7 @@ class Radius extends \SimpleSAML\Module\core\Auth\UserPassBase
             $attrv = $resv['attr'];
             $datav = $resv['data'];
 
-            if ($vendor != $this->vendor || $attrv != $this->vendorType) {
+            if ($vendor !== $this->vendor || $attrv !== $this->vendorType) {
                 continue;
             }
 
