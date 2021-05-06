@@ -60,12 +60,12 @@ class Radius extends UserPassBase
     private ?string $usernameAttribute = null;
 
     /**
-     * @var string|null The vendor for the RADIUS attributes we are interrested in.
+     * @var int|null The vendor for the RADIUS attributes we are interrested in.
      */
     private ?int $vendor = null;
 
     /**
-     * @var string The vendor-specific attribute for the RADIUS attributes we are
+     * @var int The vendor-specific attribute for the RADIUS attributes we are
      *     interrested in.
      */
     private int $vendorType;
