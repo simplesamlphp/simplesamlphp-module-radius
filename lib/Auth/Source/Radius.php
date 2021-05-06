@@ -62,13 +62,13 @@ class Radius extends UserPassBase
     /**
      * @var string|null The vendor for the RADIUS attributes we are interrested in.
      */
-    private ?string $vendor = null;
+    private ?int $vendor = null;
 
     /**
      * @var string The vendor-specific attribute for the RADIUS attributes we are
      *     interrested in.
      */
-    private string $vendorType;
+    private int $vendorType;
 
     /**
      * @var string|null The NAS-Identifier that should be set in Access-Request packets.
