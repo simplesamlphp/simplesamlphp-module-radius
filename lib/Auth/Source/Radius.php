@@ -109,9 +109,11 @@ class Radius extends UserPassBase
         $this->retries = $cfg->getInteger('retries', 3);
         $this->realm = $cfg->getString('realm', null);
         $this->usernameAttribute = $cfg->getString('username_attribute', null);
+
+        $httpUtils = new Utils\HTTP();
         $this->nasIdentifier = $cfg->getString(
             'nas_identifier',
-            Utils\HTTP::getSelfHost()
+            $httpUtils->getSelfHost()
         );
 
         $this->vendor = $cfg->getInteger('attribute_vendor', null);
