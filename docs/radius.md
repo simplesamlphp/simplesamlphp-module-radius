@@ -9,10 +9,18 @@ The RADIUS module provides a single authentication module:
 This authentication module contacts a RADIUS server, and authenticates
 the user by using username & password authentication.
 
-To use this module, enable the radius module by creating a file named
-`enable` in the `modules/radius/`-directory. Then you need to add a
-authentication source which uses the `radius:Radius` module to
-`config/authsources.php`:
+To use this module, enable the radius module: in `config.php`, search
+for the `module.enable` key and set `radius` to true:
+
+```
+    'module.enable' => [
+         'radius' => true,
+         …
+    ],
+```
+
+Then you need to add a authentication source which uses the `radius:Radius`
+module to `config/authsources.php`:
 
     'example-radius' => [
         'radius:Radius',
