@@ -7,6 +7,7 @@ namespace SimpleSAML\Module\radius\Auth\Source;
 use Exception;
 use SimpleSAML\Assert\Assert;
 use SimpleSAML\Configuration;
+use SimpleSAML\Logger;
 use SimpleSAML\Module\core\Auth\UserPassBase;
 use SimpleSAML\Utils;
 
@@ -93,11 +94,11 @@ class Radius extends UserPassBase
             'Authentication source ' . var_export($this->authId, true)
         );
 
-        $this->servers = $cfg->getArray('servers', []);
+        $this->servers = $cfg->getOptionalArray('servers', []);
         // For backwards compatibility
         if (empty($this->servers)) {
             $this->hostname = $cfg->getString('hostname');
-            $this->port = $cfg->getIntegerRange('port', 1, 65535, 1812);
+            $this->port = $cfg->getOptionalIntegerRange('port', 1, 65535, 1812);
             $this->secret = $cfg->getString('secret');
             $this->servers[] = [
                 'hostname' => $this->hostname,
@@ -105,18 +106,18 @@ class Radius extends UserPassBase
                 'secret' => $this->secret
             ];
         }
-        $this->timeout = $cfg->getInteger('timeout', 5);
-        $this->retries = $cfg->getInteger('retries', 3);
-        $this->realm = $cfg->getString('realm', null);
-        $this->usernameAttribute = $cfg->getString('username_attribute', null);
+        $this->timeout = $cfg->getOptionalInteger('timeout', 5);
+        $this->retries = $cfg->getOptionalInteger('retries', 3);
+        $this->realm = $cfg->getOptionalString('realm', null);
+        $this->usernameAttribute = $cfg->getOptionalString('username_attribute', null);
 
         $httpUtils = new Utils\HTTP();
-        $this->nasIdentifier = $cfg->getString(
+        $this->nasIdentifier = $cfg->getOptionalString(
             'nas_identifier',
             $httpUtils->getSelfHost()
         );
 
-        $this->vendor = $cfg->getInteger('attribute_vendor', null);
+        $this->vendor = $cfg->getOptionalInteger('attribute_vendor', null);
         if ($this->vendor !== null) {
             $this->vendorType = $cfg->getInteger('attribute_vendor_type');
         }
@@ -153,7 +154,7 @@ class Radius extends UserPassBase
                     $this->retries
                 )
             ) {
-                \SimpleSAML\Logger::info(
+                Logger::info(
                     "Could not add radius server: " . radius_strerror($radius)
                 );
                 continue;
