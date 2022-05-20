@@ -53,6 +53,11 @@ module to `config/authsources.php`:
         'timeout' => 5,
 
         /*
+         * Set debug modus
+         */
+        'debug' => true,
+
+        /*
          * The NAS identifier to use when querying the radius server.
          * Optional, defaults to the current host name.
          */
@@ -86,7 +91,7 @@ from the RADIUS server.
 
 The code expects one vendor-attribute with a specific vendor and a specific
 vendor attribute type for each user attribute. The vendor-attribute must
-contain a value of the form `&lt;name&gt;=&lt;value&gt;`.
+contain a value of the form `<name>=<value>`.
 
 The following configuration options are available for user attributes:
 
