@@ -101,7 +101,7 @@ class Radius extends UserPassBase
             'Authentication source ' . var_export($this->authId, true)
         );
 
-        $this->servers = $cfg->getOptionalArray('servers', []);
+        $this->servers = $cfg->getArray('servers');
         // For backwards compatibility
         if (empty($this->servers)) {
             $this->hostname = $cfg->getString('hostname');
@@ -136,9 +136,9 @@ class Radius extends UserPassBase
     protected function login(string $username, string $password): array
     {
         $radius = new RadiusClient();
+        $response = false;
 
         // Try to add all radius servers, trigger a failure if no one works
-        $success = false;
         foreach ($this->servers as $server) {
             $radius->setServer($server['hostname']);
             $radius->setAuthenticationPort($server['port']);
@@ -189,7 +189,7 @@ class Radius extends UserPassBase
         }
 
         // get AAI attribute sets.
-        while ($resa = $radius->getAttributes()) {
+        while ($resa = $radius->getReceivedAttributes()) {
             if (!is_array($resa)) {
                 throw new Exception(sprintf(
                     'Error getting radius attributes: %s (%d)',
