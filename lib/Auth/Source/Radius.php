@@ -157,7 +157,7 @@ class Radius extends UserPassBase
                 $radius->setAttribute(self::RADIUS_NAS_IDENTIFIER, $this->nasIdentifier);
             }
 
-            if ($this->realm === null) {
+            if ($this->realm !== null) {
                 $radius->setRadiusSuffix($this->realm);
             }
             $response = $radius->accessRequest($username, $password);
