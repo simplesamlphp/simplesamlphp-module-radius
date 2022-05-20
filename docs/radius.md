@@ -12,7 +12,7 @@ the user by using username & password authentication.
 To use this module, enable the radius module: in `config.php`, search
 for the `module.enable` key and set `radius` to true:
 
-```
+```php
     'module.enable' => [
          'radius' => true,
          …
@@ -22,6 +22,7 @@ for the `module.enable` key and set `radius` to true:
 Then you need to add a authentication source which uses the `radius:Radius`
 module to `config/authsources.php`:
 
+```php
     'example-radius' => [
         'radius:Radius',
 
@@ -82,7 +83,7 @@ module to `config/authsources.php`:
          */
         'username_attribute' => 'eduPersonPrincipalName',
     ],
-
+```
 
 User attributes
 ---------------
@@ -98,6 +99,7 @@ contain a value of the form `&lt;name&gt;=&lt;value&gt;`.
 
 The following configuration options are available for user attributes:
 
+```php
         /*
          * This is the vendor for the vendor-specific attribute which contains
          * the attributes for this user. This can be NULL if no attributes are
@@ -112,3 +114,4 @@ The following configuration options are available for user attributes:
          * Required if 'vendor' is set.
          */
         'attribute_vendor_type' => 4,
+```
