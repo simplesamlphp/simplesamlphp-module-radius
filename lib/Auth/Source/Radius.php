@@ -13,6 +13,7 @@ use SimpleSAML\Module\core\Auth\UserPassBase;
 use SimpleSAML\Utils;
 
 use function array_key_exists;
+use function array_merge;
 use function is_array;
 use function sprintf;
 use function strtok;
@@ -178,10 +179,8 @@ class Radius extends UserPassBase
         // If we get this far, we have a valid login
 
         $attributes = [];
-        $usernameAttribute = $this->usernameAttribute;
-
-        if ($usernameAttribute !== null) {
-            $attributes[$usernameAttribute] = [$username];
+        if ($this->usernameAttribute !== null) {
+            $attributes[$this->usernameAttribute] = [$username];
         }
 
         if ($this->vendor === null) {
@@ -192,53 +191,65 @@ class Radius extends UserPassBase
             return $attributes;
         }
 
+        return array_merge($attributes, $this->getAttributes($resa));
+    }
+
+
+    /**
+     * @param \Dapphp\Radius\Radius $radius
+     * @return array
+     */
+    private function getAttributes(RadiusClient $radius): array
+    {
         // get AAI attribute sets.
-        while ($resa = $radius->getReceivedAttributes()) {
-            if (!is_array($resa)) {
-                throw new Exception(sprintf(
-                    'Error getting radius attributes: %s (%d)',
-                    $radius->getErrorMessage(),
-                    $radius->getErrorCode()
-                ));
-            }
+        $resa = $radius->getReceivedAttributes();
 
-            // Use the received user name
-            if ($resa['attr'] === self::RADIUS_USERNAME && $usernameAttribute !== null) {
-                $attributes[$usernameAttribute] = [$resa['data']];
-                continue;
-            }
+        if (!is_array($resa)) {
+            throw new Exception(sprintf(
+                'Error getting radius attributes: %s (%d)',
+                $radius->getErrorMessage(),
+                $radius->getErrorCode()
+            ));
+        }
 
-            if ($resa['attr'] !== self::RADIUS_VENDOR_SPECIFIC) {
-                continue;
-            }
+        $attributes = [];
 
-            $resv = $resa['data'];
-            if ($resv === false) {
-                throw new Exception(sprintf(
-                    'Error getting vendor specific attribute',
-                    $radius->getErrorMessage(),
-                    $radius->getErrorCode()
-                ));
-            }
+        // Use the received user name
+        if ($resa['attr'] === self::RADIUS_USERNAME && $this->usernameAttribute !== null) {
+            $attributes[$this->usernameAttribute] = [$resa['data']];
+            return $attributes;
+        }
 
-            $vendor = $resv['vendor'];
-            $attrv = $resv['attr'];
-            $datav = $resv['data'];
+        if ($resa['attr'] !== self::RADIUS_VENDOR_SPECIFIC) {
+            return $attributes;
+        }
 
-            if ($vendor !== $this->vendor || $attrv !== $this->vendorType) {
-                continue;
-            }
+        $resv = $resa['data'];
+        if ($resv === false) {
+            throw new Exception(sprintf(
+                'Error getting vendor specific attribute',
+                $radius->getErrorMessage(),
+                $radius->getErrorCode()
+            ));
+        }
 
-            $attrib_name = strtok($datav, '=');
-            /** @psalm-suppress TooFewArguments */
-            $attrib_value = strtok('=');
+        $vendor = $resv['vendor'];
+        $attrv = $resv['attr'];
+        $datav = $resv['data'];
 
-            // if the attribute name is already in result set, add another value
-            if (array_key_exists($attrib_name, $attributes)) {
-                $attributes[$attrib_name][] = $attrib_value;
-            } else {
-                $attributes[$attrib_name] = [$attrib_value];
-            }
+        if ($vendor !== $this->vendor || $attrv !== $this->vendorType) {
+            return $attributes;
+        }
+
+        $attrib_name = strtok($datav, '=');
+        /** @psalm-suppress TooFewArguments */
+        $attrib_value = strtok('=');
+
+        // if the attribute name is already in result set, add another value
+        if (array_key_exists($attrib_name, $attributes)) {
+            $attributes[$attrib_name][] = $attrib_value;
+        } else {
+            $attributes[$attrib_name] = [$attrib_value];
         }
 
         return $attributes;
