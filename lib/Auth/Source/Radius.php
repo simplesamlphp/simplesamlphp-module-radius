@@ -12,6 +12,12 @@ use SimpleSAML\Logger;
 use SimpleSAML\Module\core\Auth\UserPassBase;
 use SimpleSAML\Utils;
 
+use function array_key_exists;
+use function is_array;
+use function sprintf;
+use function strtok;
+use function var_export;
+
 /**
  * RADIUS authentication source.
  *
@@ -158,7 +164,11 @@ class Radius extends UserPassBase
         }
 
         if ($response === false) {
-            throw new Exception('Error during radius authentication.');
+            throw new Exception(sprintf(
+                'Error during radius authentication; %s (%d)',
+                $radius->getErrorMessage(),
+                $radius->getErrorCode()
+            ));
         }
 
         // If we get this far, we have a valid login
@@ -181,9 +191,11 @@ class Radius extends UserPassBase
         // get AAI attribute sets.
         while ($resa = $radius->getAttributes()) {
             if (!is_array($resa)) {
-                throw new Exception(
-                    'Error getting radius attributes: ' . radius_strerror($radius)
-                );
+                throw new Exception(sprintf(
+                    'Error getting radius attributes: %s (%d)',
+                    $radius->getErrorMessage(),
+                    $radius->getErrorCode()
+                ));
             }
 
             // Use the received user name
@@ -198,9 +210,11 @@ class Radius extends UserPassBase
 
             $resv = $resa['data'];
             if ($resv === false) {
-                throw new Exception(
-                    'Error getting vendor specific attribute'
-                );
+                throw new Exception(sprintf(
+                    'Error getting vendor specific attribute',
+                    $radius->getErrorMessage(),
+                    $radius->getErrorCode()
+                ));
             }
 
             $vendor = $resv['vendor'];
