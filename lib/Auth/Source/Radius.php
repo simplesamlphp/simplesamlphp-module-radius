@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SimpleSAML\Module\radius\Auth\Source;
 
 use Exception;
+use Dapphp\Radius\Radius as RadiusClient;
 use SimpleSAML\Assert\Assert;
 use SimpleSAML\Configuration;
 use SimpleSAML\Logger;
@@ -133,68 +134,31 @@ class Radius extends UserPassBase
      */
     protected function login(string $username, string $password): array
     {
-        $radius = radius_auth_open();
-        if (!is_resource($radius)) {
-            throw new Exception("Insufficient memory available to create handle.");
-        }
+        $radius = new RadiusClient();
 
         // Try to add all radius servers, trigger a failure if no one works
         $success = false;
         foreach ($this->servers as $server) {
-            if (!isset($server['port'])) {
-                $server['port'] = 1812;
+            $radius->setServer($server['hostname']);
+            $radius->setSecret($server['secret']);
+            $radius->setDebug($this->debug);
+
+            $radius->setNasIpAddress($this->nasIdentifier);
+            $radius->setAttribute(32, $this->nasIdentifier);
+
+            if ($this->realm === null) {
+                $response = $radius->accessRequest($username, $password);
+            } else {
+                $response = $radius->accessRequest($username . '@' . $this->realm, $password);
             }
-            if (
-                !radius_add_server(
-                    $radius,
-                    $server['hostname'],
-                    $server['port'],
-                    $server['secret'],
-                    $this->timeout,
-                    $this->retries
-                )
-            ) {
-                Logger::info(
-                    "Could not add radius server: " . radius_strerror($radius)
-                );
-                continue;
+
+            if ($response !== false) {
+                break;
             }
-            $success = true;
-        }
-        if (!$success) {
-            throw new Exception('Error adding radius servers, no servers available');
         }
 
-        if (!radius_create_request($radius, \RADIUS_ACCESS_REQUEST)) {
-            throw new Exception(
-                'Error creating radius request: ' . radius_strerror($radius)
-            );
-        }
-
-        if ($this->realm === null) {
-            radius_put_attr($radius, \RADIUS_USER_NAME, $username);
-        } else {
-            radius_put_attr($radius, \RADIUS_USER_NAME, $username . '@' . $this->realm);
-        }
-        radius_put_attr($radius, \RADIUS_USER_PASSWORD, $password);
-
-        if ($this->nasIdentifier !== null) {
-            radius_put_attr($radius, \RADIUS_NAS_IDENTIFIER, $this->nasIdentifier);
-        }
-
-        $res = radius_send_request($radius);
-        if ($res !== \RADIUS_ACCESS_ACCEPT) {
-            switch ($res) {
-                case \RADIUS_ACCESS_REJECT:
-                    // Invalid username or password
-                    throw new \SimpleSAML\Error\Error('WRONGUSERPASS');
-                case \RADIUS_ACCESS_CHALLENGE:
-                    throw new Exception('Radius authentication error: Challenge requested, but not supported.');
-                default:
-                    throw new Exception(
-                        'Error during radius authentication: ' . radius_strerror($radius)
-                    );
-            }
+        if ($response === false) {
+            throw new Exception('Error during radius authentication.');
         }
 
         // If we get this far, we have a valid login
@@ -214,8 +178,8 @@ class Radius extends UserPassBase
             return $attributes;
         }
 
-        // get AAI attribute sets. Contributed by Stefan Winter, (c) RESTENA
-        while ($resa = radius_get_attr($radius)) {
+        // get AAI attribute sets.
+        while ($resa = $radius->getAttributes()) {
             if (!is_array($resa)) {
                 throw new Exception(
                     'Error getting radius attributes: ' . radius_strerror($radius)
@@ -223,19 +187,19 @@ class Radius extends UserPassBase
             }
 
             // Use the received user name
-            if ($resa['attr'] === \RADIUS_USER_NAME && $usernameAttribute !== null) {
+            if ($resa['attr'] === 1 && $usernameAttribute !== null) {
                 $attributes[$usernameAttribute] = [$resa['data']];
                 continue;
             }
 
-            if ($resa['attr'] !== \RADIUS_VENDOR_SPECIFIC) {
+            if ($resa['attr'] !== 26) { // Vendor-specific
                 continue;
             }
 
-            $resv = radius_get_vendor_attr($resa['data']);
+            $resv = $resa['data'];
             if ($resv === false) {
                 throw new Exception(
-                    'Error getting vendor specific attribute: ' . radius_strerror($radius)
+                    'Error getting vendor specific attribute'
                 );
             }
 
@@ -258,7 +222,6 @@ class Radius extends UserPassBase
                 $attributes[$attrib_name] = [$attrib_value];
             }
         }
-        // end of contribution
 
         return $attributes;
     }
