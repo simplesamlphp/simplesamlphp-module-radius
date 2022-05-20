@@ -47,11 +47,6 @@ class Radius extends UserPassBase
     private int $timeout;
 
     /**
-     * @var int The number of retries which should be attempted.
-     */
-    private int $retries;
-
-    /**
      * @var string|null The realm to be added to the entered username.
      */
     private ?string $realm;
@@ -76,6 +71,11 @@ class Radius extends UserPassBase
      * @var string|null The NAS-Identifier that should be set in Access-Request packets.
      */
     private ?string $nasIdentifier = null;
+
+    /**
+     * @var bool Debug modus
+     */
+    private bool $debug;
 
 
     /**
@@ -107,16 +107,11 @@ class Radius extends UserPassBase
                 'secret' => $this->secret
             ];
         }
+        $this->debug = $cfg->getOptionalBoolean('debug', false);
         $this->timeout = $cfg->getOptionalInteger('timeout', 5);
-        $this->retries = $cfg->getOptionalInteger('retries', 3);
         $this->realm = $cfg->getOptionalString('realm', null);
         $this->usernameAttribute = $cfg->getOptionalString('username_attribute', null);
-
-        $httpUtils = new Utils\HTTP();
-        $this->nasIdentifier = $cfg->getOptionalString(
-            'nas_identifier',
-            $httpUtils->getSelfHost()
-        );
+        $this->nasIdentifier = $cfg->getOptionalString('nas_identifier', null);
 
         $this->vendor = $cfg->getOptionalInteger('attribute_vendor', null);
         if ($this->vendor !== null) {
@@ -140,17 +135,22 @@ class Radius extends UserPassBase
         $success = false;
         foreach ($this->servers as $server) {
             $radius->setServer($server['hostname']);
+            $radius->setAuthenticationPort($server['port']);
             $radius->setSecret($server['secret']);
             $radius->setDebug($this->debug);
+            $radius->setTimeout($this->timeout);
 
-            $radius->setNasIpAddress($this->nasIdentifier);
-            $radius->setAttribute(32, $this->nasIdentifier);
+            $httpUtils = new Utils\HTTP();
+            $radius->setNasIpAddress(->setAuthenticationPort($httpUtils->getSelfHost());
+
+            if ($this->nasIdentifier !== null) {
+                $radius->setAttribute(32, $this->nasIdentifier);
+            }
 
             if ($this->realm === null) {
-                $response = $radius->accessRequest($username, $password);
-            } else {
-                $response = $radius->accessRequest($username . '@' . $this->realm, $password);
+                $this->setRadiusSuffix($this->realm);
             }
+            $response = $radius->accessRequest($username, $password);
 
             if ($response !== false) {
                 break;

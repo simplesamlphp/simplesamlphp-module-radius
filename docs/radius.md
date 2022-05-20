@@ -53,15 +53,6 @@ module to `config/authsources.php`:
         'timeout' => 5,
 
         /*
-         * The number of times we should retry connections to the RADIUS server.
-         * Please note that retries would be attempted with each server before
-         * trying with the next server in the queue, so if you want not to wait
-         * before trying the next server, retries should be set to 1.
-         * Optional, defaults to 3 attempts.
-         */
-        'retries' => 3,
-
-        /*
          * The NAS identifier to use when querying the radius server.
          * Optional, defaults to the current host name.
          */
