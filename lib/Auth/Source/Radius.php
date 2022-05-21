@@ -191,7 +191,7 @@ class Radius extends UserPassBase
             return $attributes;
         }
 
-        return array_merge($attributes, $this->getAttributes($resa));
+        return array_merge($attributes, $this->getAttributes($radius));
     }
 
 
