@@ -203,15 +203,6 @@ class Radius extends UserPassBase
     {
         // get AAI attribute sets.
         $resa = $radius->getReceivedAttributes();
-
-        if (!is_array($resa)) {
-            throw new Exception(sprintf(
-                'Error getting radius attributes: %s (%d)',
-                $radius->getErrorMessage(),
-                $radius->getErrorCode()
-            ));
-        }
-
         $attributes = [];
 
         // Use the received user name
