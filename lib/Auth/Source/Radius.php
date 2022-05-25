@@ -152,14 +152,14 @@ class Radius extends UserPassBase
             $radius->setTimeout($this->timeout);
 
             $httpUtils = new Utils\HTTP();
-            $radius->setNasIpAddress($httpUtils->getSelfHost());
+            $radius->setNasIpAddress($_SERVER['SERVER_ADDR'] ?: $httpUtils->getSelfHost());
 
             if ($this->nasIdentifier !== null) {
                 $radius->setAttribute(self::RADIUS_NAS_IDENTIFIER, $this->nasIdentifier);
             }
 
             if ($this->realm !== null) {
-                $radius->setRadiusSuffix($this->realm);
+                $radius->setRadiusSuffix('@' . $this->realm);
             }
             $response = $radius->accessRequest($username, $password);
 
