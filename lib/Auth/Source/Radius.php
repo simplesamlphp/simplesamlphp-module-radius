@@ -169,11 +169,19 @@ class Radius extends UserPassBase
         }
 
         if ($response === false) {
-            throw new Exception(sprintf(
-                'Error during radius authentication; %s (%d)',
-                $radius->getErrorMessage(),
-                $radius->getErrorCode()
-            ));
+            $errorCode = $radius->getErrorCode();
+            switch($errorCode) {
+                case $radius::TYPE_ACCESS_REJECT:
+                    throw new \SimpleSAML\Error\Error('WRONGUSERPASS');
+                case $radius::TYPE_ACCESS_CHALLENGE:
+                    throw new Exception('Radius authentication error: Challenge requested, but not supported.');
+                default:
+                    throw new Exception(sprintf(
+                        'Error during radius authentication; %s (%d)',
+                            $radius->getErrorMessage(),
+                            $errorCode
+                    ));
+            }
         }
 
         // If we get this far, we have a valid login
