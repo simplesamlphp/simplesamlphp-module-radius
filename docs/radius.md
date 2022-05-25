@@ -53,13 +53,9 @@ module to `config/authsources.php`:
         'timeout' => 5,
 
         /*
-         * The number of times we should retry connections to the RADIUS server.
-         * Please note that retries would be attempted with each server before
-         * trying with the next server in the queue, so if you want not to wait
-         * before trying the next server, retries should be set to 1.
-         * Optional, defaults to 3 attempts.
+         * Set debug modus
          */
-        'retries' => 3,
+        'debug' => true,
 
         /*
          * The NAS identifier to use when querying the radius server.
@@ -95,7 +91,7 @@ from the RADIUS server.
 
 The code expects one vendor-attribute with a specific vendor and a specific
 vendor attribute type for each user attribute. The vendor-attribute must
-contain a value of the form `&lt;name&gt;=&lt;value&gt;`.
+contain a value of the form `<name>=<value>`.
 
 The following configuration options are available for user attributes:
 

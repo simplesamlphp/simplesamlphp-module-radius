@@ -5,11 +5,19 @@ declare(strict_types=1);
 namespace SimpleSAML\Module\radius\Auth\Source;
 
 use Exception;
+use Dapphp\Radius\Radius as RadiusClient;
 use SimpleSAML\Assert\Assert;
 use SimpleSAML\Configuration;
 use SimpleSAML\Logger;
 use SimpleSAML\Module\core\Auth\UserPassBase;
 use SimpleSAML\Utils;
+
+use function array_key_exists;
+use function array_merge;
+use function is_array;
+use function sprintf;
+use function strtok;
+use function var_export;
 
 /**
  * RADIUS authentication source.
@@ -20,6 +28,10 @@ use SimpleSAML\Utils;
  */
 class Radius extends UserPassBase
 {
+    public const RADIUS_USERNAME = 1;
+    public const RADIUS_VENDOR_SPECIFIC = 26;
+    public const RADIUS_NAS_IDENTIFIER = 32;
+
     /**
      * @var array The list of radius servers to use.
      */
@@ -44,11 +56,6 @@ class Radius extends UserPassBase
      * @var int The timeout for contacting the radius server.
      */
     private int $timeout;
-
-    /**
-     * @var int The number of retries which should be attempted.
-     */
-    private int $retries;
 
     /**
      * @var string|null The realm to be added to the entered username.
@@ -76,6 +83,11 @@ class Radius extends UserPassBase
      */
     private ?string $nasIdentifier = null;
 
+    /**
+     * @var bool Debug modus
+     */
+    private bool $debug;
+
 
     /**
      * Constructor for this authentication source.
@@ -94,7 +106,7 @@ class Radius extends UserPassBase
             'Authentication source ' . var_export($this->authId, true)
         );
 
-        $this->servers = $cfg->getOptionalArray('servers', []);
+        $this->servers = $cfg->getArray('servers');
         // For backwards compatibility
         if (empty($this->servers)) {
             $this->hostname = $cfg->getString('hostname');
@@ -106,16 +118,11 @@ class Radius extends UserPassBase
                 'secret' => $this->secret
             ];
         }
+        $this->debug = $cfg->getOptionalBoolean('debug', false);
         $this->timeout = $cfg->getOptionalInteger('timeout', 5);
-        $this->retries = $cfg->getOptionalInteger('retries', 3);
         $this->realm = $cfg->getOptionalString('realm', null);
         $this->usernameAttribute = $cfg->getOptionalString('username_attribute', null);
-
-        $httpUtils = new Utils\HTTP();
-        $this->nasIdentifier = $cfg->getOptionalString(
-            'nas_identifier',
-            $httpUtils->getSelfHost()
-        );
+        $this->nasIdentifier = $cfg->getOptionalString('nas_identifier', null);
 
         $this->vendor = $cfg->getOptionalInteger('attribute_vendor', null);
         if ($this->vendor !== null) {
@@ -133,77 +140,55 @@ class Radius extends UserPassBase
      */
     protected function login(string $username, string $password): array
     {
-        $radius = radius_auth_open();
-        if (!is_resource($radius)) {
-            throw new Exception("Insufficient memory available to create handle.");
-        }
+        $radius = new RadiusClient();
+        $response = false;
 
         // Try to add all radius servers, trigger a failure if no one works
-        $success = false;
         foreach ($this->servers as $server) {
-            if (!isset($server['port'])) {
-                $server['port'] = 1812;
+            $radius->setServer($server['hostname']);
+            $radius->setAuthenticationPort($server['port']);
+            $radius->setSecret($server['secret']);
+            $radius->setDebug($this->debug);
+            $radius->setTimeout($this->timeout);
+
+            $httpUtils = new Utils\HTTP();
+            $radius->setNasIpAddress($_SERVER['SERVER_ADDR'] ?: $httpUtils->getSelfHost());
+
+            if ($this->nasIdentifier !== null) {
+                $radius->setAttribute(self::RADIUS_NAS_IDENTIFIER, $this->nasIdentifier);
             }
-            if (
-                !radius_add_server(
-                    $radius,
-                    $server['hostname'],
-                    $server['port'],
-                    $server['secret'],
-                    $this->timeout,
-                    $this->retries
-                )
-            ) {
-                Logger::info(
-                    "Could not add radius server: " . radius_strerror($radius)
-                );
-                continue;
+
+            if ($this->realm !== null) {
+                $radius->setRadiusSuffix('@' . $this->realm);
             }
-            $success = true;
-        }
-        if (!$success) {
-            throw new Exception('Error adding radius servers, no servers available');
+            $response = $radius->accessRequest($username, $password);
+
+            if ($response !== false) {
+                break;
+            }
         }
 
-        if (!radius_create_request($radius, \RADIUS_ACCESS_REQUEST)) {
-            throw new Exception(
-                'Error creating radius request: ' . radius_strerror($radius)
-            );
-        }
-
-        if ($this->realm === null) {
-            radius_put_attr($radius, \RADIUS_USER_NAME, $username);
-        } else {
-            radius_put_attr($radius, \RADIUS_USER_NAME, $username . '@' . $this->realm);
-        }
-        radius_put_attr($radius, \RADIUS_USER_PASSWORD, $password);
-
-        if ($this->nasIdentifier !== null) {
-            radius_put_attr($radius, \RADIUS_NAS_IDENTIFIER, $this->nasIdentifier);
-        }
-
-        $res = radius_send_request($radius);
-        if ($res !== \RADIUS_ACCESS_ACCEPT) {
-            switch ($res) {
-                case \RADIUS_ACCESS_REJECT:
-                    // Invalid username or password
+        if ($response === false) {
+            $errorCode = $radius->getErrorCode();
+            switch($errorCode) {
+                case $radius::TYPE_ACCESS_REJECT:
                     throw new \SimpleSAML\Error\Error('WRONGUSERPASS');
-                case \RADIUS_ACCESS_CHALLENGE:
+                case $radius::TYPE_ACCESS_CHALLENGE:
                     throw new Exception('Radius authentication error: Challenge requested, but not supported.');
                 default:
-                    throw new Exception(
-                        'Error during radius authentication: ' . radius_strerror($radius)
-                    );
+                    throw new Exception(sprintf(
+                        'Error during radius authentication; %s (%d)',
+                            $radius->getErrorMessage(),
+                            $errorCode
+                    ));
             }
         }
 
         // If we get this far, we have a valid login
 
         $attributes = [];
-        $usernameAttribute = $this->usernameAttribute;
-
-        if ($usernameAttribute !== null) {
-            $attributes[$usernameAttribute] = [$username];
+        if ($this->usernameAttribute !== null) {
+            $attributes[$this->usernameAttribute] = [$username];
         }
 
         if ($this->vendor === null) {
@@ -214,51 +199,57 @@ class Radius extends UserPassBase
             return $attributes;
         }
 
-        // get AAI attribute sets. Contributed by Stefan Winter, (c) RESTENA
-        while ($resa = radius_get_attr($radius)) {
-            if (!is_array($resa)) {
-                throw new Exception(
-                    'Error getting radius attributes: ' . radius_strerror($radius)
-                );
-            }
+        return array_merge($attributes, $this->getAttributes($radius));
+    }
 
-            // Use the received user name
-            if ($resa['attr'] === \RADIUS_USER_NAME && $usernameAttribute !== null) {
-                $attributes[$usernameAttribute] = [$resa['data']];
-                continue;
-            }
 
-            if ($resa['attr'] !== \RADIUS_VENDOR_SPECIFIC) {
-                continue;
-            }
+    /**
+     * @param \Dapphp\Radius\Radius $radius
+     * @return array
+     */
+    private function getAttributes(RadiusClient $radius): array
+    {
+        // get AAI attribute sets.
+        $resa = $radius->getReceivedAttributes();
+        $attributes = [];
 
-            $resv = radius_get_vendor_attr($resa['data']);
-            if ($resv === false) {
-                throw new Exception(
-                    'Error getting vendor specific attribute: ' . radius_strerror($radius)
-                );
-            }
-
-            $vendor = $resv['vendor'];
-            $attrv = $resv['attr'];
-            $datav = $resv['data'];
-
-            if ($vendor !== $this->vendor || $attrv !== $this->vendorType) {
-                continue;
-            }
-
-            $attrib_name = strtok($datav, '=');
-            /** @psalm-suppress TooFewArguments */
-            $attrib_value = strtok('=');
-
-            // if the attribute name is already in result set, add another value
-            if (array_key_exists($attrib_name, $attributes)) {
-                $attributes[$attrib_name][] = $attrib_value;
-            } else {
-                $attributes[$attrib_name] = [$attrib_value];
-            }
+        // Use the received user name
+        if ($resa['attr'] === self::RADIUS_USERNAME && $this->usernameAttribute !== null) {
+            $attributes[$this->usernameAttribute] = [$resa['data']];
+            return $attributes;
         }
-        // end of contribution
+
+        if ($resa['attr'] !== self::RADIUS_VENDOR_SPECIFIC) {
+            return $attributes;
+        }
+
+        $resv = $resa['data'];
+        if ($resv === false) {
+            throw new Exception(sprintf(
+                'Error getting vendor specific attribute',
+                $radius->getErrorMessage(),
+                $radius->getErrorCode()
+            ));
+        }
+
+        $vendor = $resv['vendor'];
+        $attrv = $resv['attr'];
+        $datav = $resv['data'];
+
+        if ($vendor !== $this->vendor || $attrv !== $this->vendorType) {
+            return $attributes;
+        }
+
+        $attrib_name = strtok($datav, '=');
+        /** @psalm-suppress TooFewArguments */
+        $attrib_value = strtok('=');
+
+        // if the attribute name is already in result set, add another value
+        if (array_key_exists($attrib_name, $attributes)) {
+            $attributes[$attrib_name][] = $attrib_value;
+        } else {
+            $attributes[$attrib_name] = [$attrib_value];
+        }
 
         return $attributes;
     }
