@@ -22,7 +22,7 @@
     },
     "autoload": {
         "psr-4": {
-            "SimpleSAML\\Module\\radius\\": "lib/"
+            "SimpleSAML\\Module\\radius\\": "src/"
         }
     },
     "autoload-dev": {
@@ -35,7 +35,7 @@
 
         "dapphp/radius": "^3.0.0",
         "simplesamlphp/composer-module-installer": "~1.1",
-        "simplesamlphp/simplesamlphp": "^2.0.0-beta.9",
+        "simplesamlphp/simplesamlphp": "^2.0.0-beta.11",
         "simplesamlphp/simplesamlphp-test-framework": "^1.2.1"
     },
     "support": {
