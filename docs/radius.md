@@ -73,7 +73,7 @@ module to `config/authsources.php`:
         'realm' => 'example.edu',
 
         /*
-         * The attribute name we should store the username in. Ths username
+         * The attribute name we should store the username in. This username
          * will not be saved in any attribute if this is NULL.
          * Optional, defaults to NULL.
          */
