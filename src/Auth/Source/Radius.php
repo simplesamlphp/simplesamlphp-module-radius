@@ -198,15 +198,16 @@ class Radius extends UserPassBase
              */
             return $attributes;
            } else {
-            foreach ($radius->getReceivedAttributes() as $content) {
-                        if ($content[0] == 26) { // is a Vendor-Specific attribute
-                                $vsa = $radius->decodeVendorSpecificContent($content[1]);
-                                if ($vsa[0][0] === $this->vendor && $vsa[0][1] === $this->vendorType) { // matches configured Vendor and Type
-                                        $decomposed = explode("=", $vsa[0][2], 2); // SAML attributes expected in a URN=value, so split at first =
-                                        $attributes[$decomposed[0]][] = $decomposed[1];
-                                }
-                        }
+               foreach ($radius->getReceivedAttributes() as $content) {
+                   if ($content[0] == 26) { // is a Vendor-Specific attribute
+                       $vsa = $radius->decodeVendorSpecificContent($content[1]);
+                       if ($vsa[0][0] === $this->vendor && $vsa[0][1] === $this->vendorType) { // matches configured Vendor and Type
+                           $decomposed = explode("=", $vsa[0][2], 2); // SAML attributes expected in a URN=value, so split at first =
+                           $attributes[$decomposed[0]][] = $decomposed[1];
+                       }
+                   }
                 }
+            }
         }
 
         return array_merge($attributes, $this->getAttributes($radius));
