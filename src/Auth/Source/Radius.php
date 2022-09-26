@@ -171,7 +171,7 @@ class Radius extends UserPassBase
 
         if ($response === false) {
             $errorCode = $radius->getErrorCode();
-            switch($errorCode) {
+            switch ($errorCode) {
                 case $radius::TYPE_ACCESS_REJECT:
                     throw new Error\Error('WRONGUSERPASS');
                 case $radius::TYPE_ACCESS_CHALLENGE:
@@ -179,8 +179,8 @@ class Radius extends UserPassBase
                 default:
                     throw new Exception(sprintf(
                         'Error during radius authentication; %s (%d)',
-                            $radius->getErrorMessage(),
-                            $errorCode
+                        $radius->getErrorMessage(),
+                        $errorCode
                     ));
             }
         }
@@ -202,8 +202,11 @@ class Radius extends UserPassBase
             foreach ($radius->getReceivedAttributes() as $content) {
                 if ($content[0] == 26) { // is a Vendor-Specific attribute
                     $vsa = $radius->decodeVendorSpecificContent($content[1]);
-                    if ($vsa[0][0] === $this->vendor && $vsa[0][1] === $this->vendorType) { // matches configured Vendor and Type
-                        $decomposed = explode("=", $vsa[0][2], 2); // SAML attributes expected in a URN=value, so split at first =
+
+                    // matches configured Vendor and Type
+                    if ($vsa[0][0] === $this->vendor && $vsa[0][1] === $this->vendorType) {
+                        // SAML attributes expected in a URN=value, so split at first =
+                        $decomposed = explode("=", $vsa[0][2], 2);
                         $attributes[$decomposed[0]][] = $decomposed[1];
                     }
                 }
