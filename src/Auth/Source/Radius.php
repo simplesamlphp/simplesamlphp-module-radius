@@ -4,18 +4,15 @@ declare(strict_types=1);
 
 namespace SimpleSAML\Module\radius\Auth\Source;
 
-use Exception;
 use Dapphp\Radius\Radius as RadiusClient;
-use SimpleSAML\Assert\Assert;
+use Exception;
 use SimpleSAML\Configuration;
 use SimpleSAML\Error;
-use SimpleSAML\Logger;
 use SimpleSAML\Module\core\Auth\UserPassBase;
 use SimpleSAML\Utils;
 
 use function array_key_exists;
 use function array_merge;
-use function is_array;
 use function sprintf;
 use function strtok;
 use function var_export;
