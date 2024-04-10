@@ -151,6 +151,7 @@ class Radius extends UserPassBase
             $radius->setSecret($server['secret']);
             $radius->setDebug($this->debug);
             $radius->setTimeout($this->timeout);
+            $radius->setIncludeMessageAuthenticator();
 
             $httpUtils = new Utils\HTTP();
             $radius->setNasIpAddress($_SERVER['SERVER_ADDR'] ?: $httpUtils->getSelfHost());
