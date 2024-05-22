@@ -113,7 +113,7 @@ class Radius extends UserPassBase
             $this->servers[] = [
                 'hostname' => $this->hostname,
                 'port' => $this->port,
-                'secret' => $this->secret
+                'secret' => $this->secret,
             ];
         }
         $this->debug = $cfg->getOptionalBoolean('debug', false);
