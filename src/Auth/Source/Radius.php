@@ -101,7 +101,7 @@ class Radius extends UserPassBase
         // Parse configuration.
         $cfg = Configuration::loadFromArray(
             $config,
-            'Authentication source ' . var_export($this->authId, true)
+            'Authentication source ' . var_export($this->authId, true),
         );
 
         $this->servers = $cfg->getArray('servers');
@@ -181,7 +181,7 @@ class Radius extends UserPassBase
                     throw new Exception(sprintf(
                         'Error during radius authentication; %s (%d)',
                         $radius->getErrorMessage(),
-                        $errorCode
+                        $errorCode,
                     ));
             }
         }
@@ -243,7 +243,7 @@ class Radius extends UserPassBase
             throw new Exception(sprintf(
                 'Error getting vendor specific attribute',
                 $radius->getErrorMessage(),
-                $radius->getErrorCode()
+                $radius->getErrorCode(),
             ));
         }
 
