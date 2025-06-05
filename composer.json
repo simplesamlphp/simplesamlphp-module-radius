@@ -36,11 +36,11 @@
     "require": {
         "php": "^8.1",
 
-        "dapphp/radius": "^3.0.0",
-        "simplesamlphp/simplesamlphp": "^2.1"
+        "dapphp/radius": "~3.0.0",
+        "simplesamlphp/simplesamlphp": "~2.4.0"
     },
     "require-dev": {
-        "simplesamlphp/simplesamlphp-test-framework": "^1.5"
+        "simplesamlphp/simplesamlphp-test-framework": "~1.9.2"
     },
     "support": {
         "issues": "https://github.com/tvdijen/simplesamlphp-module-radius/issues",
