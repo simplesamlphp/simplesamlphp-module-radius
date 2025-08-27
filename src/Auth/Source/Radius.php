@@ -8,6 +8,7 @@ use Dapphp\Radius\Radius as RadiusClient;
 use Exception;
 use SimpleSAML\Configuration;
 use SimpleSAML\Error;
+use SimpleSAML\Logger;
 use SimpleSAML\Module\core\Auth\UserPassBase;
 use SimpleSAML\Utils;
 
@@ -174,6 +175,7 @@ class Radius extends UserPassBase
             $errorCode = $radius->getErrorCode();
             switch ($errorCode) {
                 case $radius::TYPE_ACCESS_REJECT:
+                    Logger::warning('ldapRadius: Radius authentication failed.');
                     throw new Error\Error('WRONGUSERPASS');
                 case $radius::TYPE_ACCESS_CHALLENGE:
                     throw new Exception('Radius authentication error: Challenge requested, but not supported.');
@@ -186,8 +188,9 @@ class Radius extends UserPassBase
             }
         }
 
-        // If we get this far, we have a valid login
+        Logger::info('ldapRadius: Radius authentication succeeded.');
 
+        // If we get this far, we have a valid login
         $attributes = [];
         if ($this->usernameAttribute !== null) {
             $attributes[$this->usernameAttribute] = [$username];
