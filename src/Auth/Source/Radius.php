@@ -32,7 +32,7 @@ class Radius extends UserPassBase
     public const RADIUS_NAS_IDENTIFIER = 32;
 
     /**
-     * @var array The list of radius servers to use.
+     * @var array<mixed> The list of radius servers to use.
      */
     private array $servers;
 
@@ -91,8 +91,8 @@ class Radius extends UserPassBase
     /**
      * Constructor for this authentication source.
      *
-     * @param array $info  Information about this authentication source.
-     * @param array $config  Configuration.
+     * @param array<mixed> $info  Information about this authentication source.
+     * @param array<mixed> $config  Configuration.
      */
     public function __construct(array $info, array $config)
     {
@@ -135,7 +135,7 @@ class Radius extends UserPassBase
      *
      * @param string $username  The username the user wrote.
      * @param string $password  The password the user wrote.
-     * @return array[] Associative array with the user's attributes.
+     * @return array<mixed> Associative array with the user's attributes.
      */
     protected function login(
         string $username,
@@ -223,7 +223,7 @@ class Radius extends UserPassBase
 
     /**
      * @param \Dapphp\Radius\Radius $radius
-     * @return array
+     * @return array<mixed>
      */
     private function getAttributes(RadiusClient $radius): array
     {
@@ -244,7 +244,7 @@ class Radius extends UserPassBase
         $resv = $resa['data'];
         if ($resv === false) {
             throw new Exception(sprintf(
-                'Error getting vendor specific attribute',
+                'Error getting vendor specific attribute: %s (%d)',
                 $radius->getErrorMessage(),
                 $radius->getErrorCode(),
             ));
@@ -259,15 +259,9 @@ class Radius extends UserPassBase
         }
 
         $attrib_name = strtok($datav, '=');
-        /** @psalm-suppress TooFewArguments */
         $attrib_value = strtok('=');
 
-        // if the attribute name is already in result set, add another value
-        if (array_key_exists($attrib_name, $attributes)) {
-            $attributes[$attrib_name][] = $attrib_value;
-        } else {
-            $attributes[$attrib_name] = [$attrib_value];
-        }
+        $attributes[$attrib_name] = [$attrib_value];
 
         return $attributes;
     }
