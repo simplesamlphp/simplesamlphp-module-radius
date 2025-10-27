@@ -12,7 +12,6 @@ use SimpleSAML\Logger;
 use SimpleSAML\Module\core\Auth\UserPassBase;
 use SimpleSAML\Utils;
 
-use function array_key_exists;
 use function array_merge;
 use function sprintf;
 use function strtok;
@@ -28,8 +27,11 @@ use function var_export;
 class Radius extends UserPassBase
 {
     public const RADIUS_USERNAME = 1;
+
     public const RADIUS_VENDOR_SPECIFIC = 26;
+
     public const RADIUS_NAS_IDENTIFIER = 32;
+
 
     /**
      * @var array<mixed> The list of radius servers to use.
