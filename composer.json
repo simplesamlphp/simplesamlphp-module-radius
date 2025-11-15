@@ -37,7 +37,7 @@
         "php": "^8.2",
 
         "dapphp/radius": "~3.0.0",
-        "simplesamlphp/simplesamlphp": "~2.4.0"
+        "simplesamlphp/simplesamlphp": "^2.4.0"
     },
     "require-dev": {
         "simplesamlphp/simplesamlphp-test-framework": "~1.10.3"
