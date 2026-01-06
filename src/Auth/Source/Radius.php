@@ -26,11 +26,11 @@ use function var_export;
  */
 class Radius extends UserPassBase
 {
-    public const RADIUS_USERNAME = 1;
+    public const int RADIUS_USERNAME = 1;
 
-    public const RADIUS_VENDOR_SPECIFIC = 26;
+    public const int RADIUS_VENDOR_SPECIFIC = 26;
 
-    public const RADIUS_NAS_IDENTIFIER = 32;
+    public const int RADIUS_NAS_IDENTIFIER = 32;
 
 
     /**
@@ -160,7 +160,7 @@ class Radius extends UserPassBase
             $radius->setNasIpAddress($_SERVER['SERVER_ADDR'] ?: $httpUtils->getSelfHost());
 
             if ($this->nasIdentifier !== null) {
-                $radius->setAttribute(self::RADIUS_NAS_IDENTIFIER, $this->nasIdentifier);
+                $radius->setAttribute((string)self::RADIUS_NAS_IDENTIFIER, $this->nasIdentifier);
             }
 
             if ($this->realm !== null) {
