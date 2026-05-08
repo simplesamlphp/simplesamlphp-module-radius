@@ -163,8 +163,9 @@ class Radius extends UserPassBase
                 $radius->setRadiusSuffix('@' . $this->realm);
             }
             $response = $radius->accessRequest($username, $password);
-
-            if ($response !== false) {
+            $errorCode = $radius->getErrorCode();
+            if ($response !== false || $errorCode === $radius::TYPE_ACCESS_REJECT) {
+                // Either we succeeded or the authentication failed. No need to try any secondary servers
                 break;
             }
         }
